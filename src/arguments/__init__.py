@@ -54,7 +54,9 @@ class ModelParams(ParamGroup):
         self._resolution = -1
         self._white_background = False
         self.data_device = "cuda"
-        self.eval = False
+        self.eval = True
+        self.cap_max = -1 # MCMC
+        self.init_type = "random" # MCMC
         self.speedup = False ###
         self.render_items = ['RGB', 'Depth', 'Edge', 'Normal', 'Curvature', 'Feature Map']
         super().__init__(parser, "Loading Parameters", sentinel)
@@ -90,7 +92,12 @@ class OptimizationParams(ParamGroup):
         self.densification_interval = 100
         self.opacity_reset_interval = 3000 ### TRY reset to 100000 but worse
         self.densify_from_iter = 500
-        self.densify_until_iter = 15_000 #6000 ### comapre with 2-stage
+        # self.densify_until_iter = 15_000 #6000 ### comapre with 2-stage
+        self.densify_until_iter = 25_000 # MCMC
+        self.noise_lr = 5e5 # MCMC
+        self.scale_reg = 0.01 # MCMC
+        self.opacity_reg = 0.01 # MCMC
+
         self.densify_grad_threshold = 0.0002
         super().__init__(parser, "Optimization Parameters")
 

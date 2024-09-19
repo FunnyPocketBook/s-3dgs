@@ -62,6 +62,7 @@ namespace FORWARD
 		uint32_t* n_contrib,
 		const float* bg_color,
 		float* out_color,
+		int* is_used, // MCMC
 		float* out_feature_map,
 		float* out_depth);
 }

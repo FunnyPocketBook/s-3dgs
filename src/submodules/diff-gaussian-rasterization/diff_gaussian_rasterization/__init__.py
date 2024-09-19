@@ -90,14 +90,14 @@ class _RasterizeGaussians(torch.autograd.Function):
             cpu_args = cpu_deep_copy_tuple(args) # Copy them before they can be corrupted
             try:
                 # num_rendered, color, feature_map, radii, geomBuffer, binningBuffer, imgBuffer = _C.rasterize_gaussians(*args) #############
-                num_rendered, color, feature_map, depth, radii, geomBuffer, binningBuffer, imgBuffer = _C.rasterize_gaussians(*args)
+                num_rendered, color, feature_map, depth, radii, geomBuffer, binningBuffer, imgBuffer, isUsed = _C.rasterize_gaussians(*args)
             except Exception as ex:
                 torch.save(cpu_args, "snapshot_fw.dump")
                 print("\nAn error occured in forward. Please forward snapshot_fw.dump for debugging.")
                 raise ex
         else:
             # num_rendered, color, feature_map, radii, geomBuffer, binningBuffer, imgBuffer = _C.rasterize_gaussians(*args) ###############
-            num_rendered, color, feature_map, depth, radii, geomBuffer, binningBuffer, imgBuffer = _C.rasterize_gaussians(*args) ###d
+            num_rendered, color, feature_map, depth, radii, geomBuffer, binningBuffer, imgBuffer, isUsed = _C.rasterize_gaussians(*args) ###d
 
         # Keep relevant tensors for backward
         ctx.raster_settings = raster_settings
@@ -105,12 +105,12 @@ class _RasterizeGaussians(torch.autograd.Function):
         # ctx.save_for_backward(colors_precomp, semantic_feature, means3D, scales, rotations, cov3Ds_precomp, radii, sh, geomBuffer, binningBuffer, imgBuffer) ###
         ctx.save_for_backward(colors_precomp, semantic_feature, means3D, scales, rotations, cov3Ds_precomp, radii, sh, geomBuffer, binningBuffer, imgBuffer) ###d
         # return color, feature_map, radii ###
-        return color, feature_map, radii, depth
+        return color, feature_map, radii, depth, isUsed
 
     @staticmethod
     ### def backward(ctx, grad_out_color, _):
     # def backward(ctx, grad_out_color, grad_out_feature, _): ###############
-    def backward(ctx, grad_out_color, grad_out_feature, _, grad_depth): ###d
+    def backward(ctx, grad_out_color, grad_out_feature, _, grad_depth, _2): ###d
         # Restore necessary values from context
         num_rendered = ctx.num_rendered
         raster_settings = ctx.raster_settings
@@ -237,3 +237,6 @@ class GaussianRasterizer(nn.Module):
             raster_settings,
         )
 
+def compute_relocation(opacity_old, scale_old, N, binoms, n_max):
+    new_opacity, new_scale = _C.compute_relocation(opacity_old, scale_old, N.int(), binoms, n_max)
+    return new_opacity, new_scale 

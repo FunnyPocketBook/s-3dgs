@@ -217,6 +217,7 @@ int CudaRasterizer::Rasterizer::forward(
 	const float tan_fovx, float tan_fovy,
 	const bool prefiltered,
 	float* out_color,
+	int* is_used, // MCMC
 	float* out_feature_map,
 	float* out_depth,
 	int* radii,
@@ -336,7 +337,8 @@ int CudaRasterizer::Rasterizer::forward(
 		background,
 		out_color,
 		out_feature_map,
-		out_depth), debug)
+		out_depth,
+		is_used), debug)
 
 	return num_rendered;
 }

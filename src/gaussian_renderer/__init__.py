@@ -14,6 +14,9 @@ import math
 from diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
 from scene.gaussian_model import GaussianModel
 from utils.sh_utils import eval_sh
+from gsplat.project_gaussians import project_gaussians
+from gsplat.sh import spherical_harmonics
+from gsplat.rasterize import rasterize_gaussians
 
 from torch import nn
 
@@ -149,7 +152,7 @@ def render_edit(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Ten
     
 
     # Rasterize visible Gaussians to image, obtain their radii (on screen). 
-    rendered_image, feature_map, radii = rasterizer(
+    rendered_image, feature_map, radii, is_used = rasterizer(
         means3D = means3D,
         means2D = means2D,
         shs = shs,
@@ -166,7 +169,8 @@ def render_edit(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Ten
             "viewspace_points": screenspace_points,
             "visibility_filter" : radii > 0,
             "radii": radii,
-            'feature_map': feature_map}
+            'feature_map': feature_map,
+            "is_used": is_used} # MCMC
 
 
 def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, override_color = None):
@@ -239,7 +243,7 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     var_loss = torch.zeros(1,viewpoint_camera.image_height,viewpoint_camera.image_width) ###d
 
     # Rasterize visible Gaussians to image, obtain their radii (on screen). 
-    rendered_image, feature_map, radii, depth = rasterizer(
+    rendered_image, feature_map, radii, depth, is_used = rasterizer(
         means3D = means3D,
         means2D = means2D,
         shs = shs,
@@ -257,11 +261,10 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
             "visibility_filter" : radii > 0,
             "radii": radii,
             'feature_map': feature_map,
-            "depth": depth} ###d
+            "depth": depth, ###d
+            "is_used": is_used # MCMC
+            } 
 
-from gsplat.project_gaussians import project_gaussians
-from gsplat.sh import spherical_harmonics
-from gsplat.rasterize import rasterize_gaussians
 def gsplat_render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, scaling_modifier=1.0, override_color=None):
     tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
     tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
