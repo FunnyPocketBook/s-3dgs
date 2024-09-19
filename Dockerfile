@@ -14,13 +14,13 @@ RUN apt update && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
-RUN git clone https://github.com/FunnyPocketBook/feature-3dgs.git --recursive && \
+RUN git clone https://github.com/FunnyPocketBook/s-3dgs.git --recursive && \
     git clone https://github.com/RongLiu-Leo/Gaussian-Splatting-Monitor.git
 
-WORKDIR /workspace/feature-3dgs/src
+WORKDIR /workspace/s-3dgs/src
 RUN conda env create --file environment.yml
 
-SHELL ["conda", "run", "-n", "feature_3dgs", "/bin/bash", "-c"]
+SHELL ["conda", "run", "-n", "s-3dgs", "/bin/bash", "-c"]
 
 RUN pip install -r encoders/lseg_encoder/requirements.txt && \
     pip install -e encoders/sam_encoder && \
@@ -56,9 +56,9 @@ RUN apt update && \
 COPY --from=builder /opt/miniforge3 /opt/miniforge3
 COPY --from=builder /workspace/Gaussian-Splatting-Monitor/SIBR_viewers /workspace/SIBR_viewers
 
-WORKDIR /workspace/feature-3dgs
+WORKDIR /workspace/s-3dgs
 
 RUN conda init bash
-RUN echo "source activate feature_3dgs" >> ~/.bashrc
+RUN echo "source activate s-3dgs" >> ~/.bashrc
 
 CMD ["tail", "-f", "/dev/null"]

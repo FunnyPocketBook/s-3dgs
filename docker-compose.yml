@@ -1,16 +1,16 @@
 services:
   feature-3dgs:
-    container_name: feature_3dgs
-    image: ghcr.io/funnypocketbook/feature-3dgs:latest
+    container_name: s-3dgs
+    image: ghcr.io/funnypocketbook/s-3dgs:latest
     build:
       context: .
       dockerfile: Dockerfile
     tty: true
     volumes:
-      - /home/dangy/git/feature-3dgs/src:/workspace/feature-3dgs
+      - /home/dangy/git/s-3dgs/src:/workspace/s-3dgs
       - /home/dangy/data:/workspace/data
       - /home/dangy/output:/workspace/output
-      - /home/dangy/checkpoints/sam:/workspace/feature-3dgs/encoders/sam_encoder/checkpoints
+      - /home/dangy/checkpoints/sam:/workspace/s-3dgs/encoders/sam_encoder/checkpoints
       - /home/dangy/checkpoints/lseg:/workspace/lseg
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ~/.Xauthority:/root/.Xauthority:rw
