@@ -1,5 +1,5 @@
 services:
-  feature-3dgs:
+  s-3dgs:
     container_name: s-3dgs
     image: ghcr.io/funnypocketbook/s-3dgs:latest
     build:
