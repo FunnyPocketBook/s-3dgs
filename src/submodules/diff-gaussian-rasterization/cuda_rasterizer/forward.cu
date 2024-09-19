@@ -428,9 +428,10 @@ void FORWARD::render(
 		n_contrib,
 		bg_color,
 		out_color,
+		is_used, // MCMC
 		out_feature_map,
-		out_depth,
-		is_used); // MCMC
+		out_depth
+		);
 }
 
 void FORWARD::preprocess(int P, int D, int M,
