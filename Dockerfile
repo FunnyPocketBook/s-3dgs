@@ -14,8 +14,7 @@ RUN apt update && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
-RUN git clone https://github.com/FunnyPocketBook/s-3dgs.git --recursive && \
-    git clone https://github.com/RongLiu-Leo/Gaussian-Splatting-Monitor.git
+RUN git clone https://github.com/FunnyPocketBook/s-3dgs.git --recursive && git clone https://github.com/RongLiu-Leo/Gaussian-Splatting-Monitor.git
 
 WORKDIR /workspace/s-3dgs/src
 RUN conda env create --file environment.yml

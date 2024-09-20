@@ -10,11 +10,12 @@
 #
 
 import os
+from utils.clip_utils import CLIPEditor
 import torch
 from random import randint
 from utils.loss_utils import l1_loss, ssim, tv_loss 
-# from gaussian_renderer import gsplat_render as render, network_gui
-from gaussian_renderer import render, network_gui
+from gaussian_renderer import calculate_selection_score, gsplat_render as render, network_gui
+# from gaussian_renderer import render, network_gui
 import sys
 from scene import Scene, GaussianModel
 from utils.general_utils import safe_state
@@ -149,6 +150,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
             if iteration < opt.densify_until_iter and iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
                 dead_mask = (gaussians.get_opacity <= 0.005).squeeze(-1)
+
                 gaussians.relocate_gs(dead_mask=dead_mask)
                 gaussians.add_new_gs(cap_max=args.cap_max)
 

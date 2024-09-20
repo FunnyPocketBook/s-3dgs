@@ -1,17 +1,18 @@
-name: feature_3dgs
+name: s-3dgs
 channels:
   - pytorch
   - conda-forge
   - defaults
 dependencies:
-  - cudatoolkit=11.6
-  - plyfile=0.8.1
-  - python=3.7.13
+  - cudatoolkit-dev=11.7
+  - python=3.8
   - pip=22.3.1
-  - pytorch=1.12.1
-  - torchaudio=0.12.1
-  - torchvision=0.13.1
   - tqdm
   - pip:
+    - plyfile 
+    - tqdm
+    - torch==1.13.1+cu117
+    - torchvision==0.14.1+cu117
+    - torchaudio==0.13.1
     - submodules/diff-gaussian-rasterization
     - submodules/simple-knn
