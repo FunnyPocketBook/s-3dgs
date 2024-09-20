@@ -17,9 +17,12 @@ WORKDIR /workspace
 RUN git clone https://github.com/FunnyPocketBook/s-3dgs.git --recursive && git clone https://github.com/RongLiu-Leo/Gaussian-Splatting-Monitor.git
 
 WORKDIR /workspace/s-3dgs/src
-RUN conda env create --file environment.yml
+RUN conda create -y -n s-3dgs python=3.8
 
 SHELL ["conda", "run", "-n", "s-3dgs", "/bin/bash", "-c"]
+
+RUN pip install plyfile tqdm torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+RUN conda install cudatoolkit-dev=11.7 -c conda-forge
 
 RUN pip install -r encoders/lseg_encoder/requirements.txt && \
     pip install -e encoders/sam_encoder && \
