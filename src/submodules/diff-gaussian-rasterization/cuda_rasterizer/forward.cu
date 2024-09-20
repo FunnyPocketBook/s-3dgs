@@ -273,7 +273,6 @@ renderCUDA(
 	uint32_t* __restrict__ n_contrib,
 	const float* __restrict__ bg_color,
 	float* __restrict__ out_color,
-	int* __restrict__ is_used, // MCMC
 	float* __restrict__ out_feature_map,
 	float* __restrict__ out_depth) 
 {
@@ -376,7 +375,6 @@ renderCUDA(
 			// Keep track of last range entry to update this
 			// pixel.
 			last_contributor = contributor;
-			is_used[collected_id[j]] = 1; // MCMC
 		}
 	}
 
@@ -411,7 +409,6 @@ void FORWARD::render(
 	uint32_t* n_contrib,
 	const float* bg_color,
 	float* out_color,
-	int* is_used, // MCMC
 	float* out_feature_map,
 	float* out_depth) 
 {
@@ -428,7 +425,6 @@ void FORWARD::render(
 		n_contrib,
 		bg_color,
 		out_color,
-		is_used, // MCMC
 		out_feature_map,
 		out_depth
 		);
