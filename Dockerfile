@@ -3,6 +3,7 @@ FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/opt/miniforge3/bin:$PATH"
 ENV TORCH_CUDA_ARCH_LIST="8.0+PTX"
+ENV CUDA_HOME=/opt/miniforge3/envs/s-3dgs/pkgs/cuda-toolkit/
 
 RUN apt update && \
     apt install -y --no-install-recommends tzdata git libglew-dev libassimp-dev libboost-all-dev libgtk-3-dev \
@@ -23,6 +24,7 @@ SHELL ["conda", "run", "-n", "s-3dgs", "/bin/bash", "-c"]
 
 RUN pip install plyfile tqdm torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
 RUN conda install cudatoolkit-dev=11.7 -c conda-forge
+RUN pip install submodules/diff-gaussian-rasterization submodules/simple-knn/
 
 RUN pip install -r encoders/lseg_encoder/requirements.txt && \
     pip install -e encoders/sam_encoder && \
