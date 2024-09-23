@@ -10,7 +10,7 @@ class CLIPEditor(object):
     def __init__(self):
         super(CLIPEditor, self).__init__()
         self.device = "cuda"
-        self.model, _preprocess = clip.load("ViT-B/32", device=self.device, download_root="/tmp/tmp_clip")
+        self.model, _preprocess = clip.load("ViT-B/32", device=self.device, download_root="/workspace/clip")
         self.model = self.model.float()
         self.text_features = None
         self.text_filter_features = None

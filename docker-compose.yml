@@ -12,6 +12,7 @@ services:
       - /home/dangy/output:/workspace/output
       - /home/dangy/checkpoints/sam:/workspace/s-3dgs/encoders/sam_encoder/checkpoints
       - /home/dangy/checkpoints/lseg:/workspace/lseg
+      - /home/dangy/checkpoints/clip:/workspace/clip
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ~/.Xauthority:/root/.Xauthority:rw
     environment:
