@@ -10,8 +10,8 @@
 # python export_image_embeddings.py --checkpoint checkpoints/sam_vit_h_4b8939.pth --model-type vit_h --input /workspace/data/replica_data/room0/images  --output /workspace/data/replica_data/room0/sam_embeddings
 # python export_image_embeddings.py --checkpoint checkpoints/sam_vit_h_4b8939.pth --model-type vit_h --input /workspace/data/cup_plush/images  --output /workspace/data/cup_plush/sam_embeddings
 # python -u encode_images.py --backbone clip_vitl16_384 --weights /workspace/lseg/demo_e200.ckpt --widehead --no-scaleinv --outdir /workspace/data/tree18/colmap/rgb_feature_langseg --test-rgb-dir /workspace/data/tree18/colmap/images --workers 0
-cd /workspace/feature-3dgs/
-python train.py -s /workspace/data/tree/colmap -m /workspace/output/tree/lseg/no_speedup/home/r-1 -f lseg --save_iterations 100 200 300 400 500 590 2000 5000 7000 --checkpoint_iterations 100 200 300 400 500 590 2000 5000 7000
+cd /workspace/s-3dgs/
+python train.py -s /workspace/data/tree/colmap -m /workspace/output/tree/lseg/no_speedup/nlr/r-1 -f lseg --cap_max 30000 --scale_reg 0.01 --opacity_reg 0.01 --noise_lr 5e5 --init_type sfm 
 # python render.py -s /workspace/data/tree18/colmap -m /workspace/output/tree18_sam/ -f sam --iteration 7000 --novel_view --multi_interpolate --video 
 # python render.py -s /workspace/data/tree18/colmap -m /workspace/output/tree18_lseg/ -f lseg --iteration 20000 --novel_view --multi_interpolate --video
 # python train.py -s /workspace/data/tree18/colmap -m /workspace/output/tree18/lseg/ -f lseg -r 4 --speedup --save_iterations 100 200 300 400 500 600 700 800 900 1000 2000 5000 7000 10000 15000 20000 --checkpoint_iterations 100 200 300 400 500 600 700 800 900 1000 2000 5000 7000 10000 15000 20000 --eval --iterations 20000

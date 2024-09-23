@@ -523,13 +523,7 @@ class GaussianModel:
         if dead_mask.sum() == 0:
             return
 
-        clip_editor = CLIPEditor()
-        text_feature = clip_editor.encode_text(["car"])
-
-        scores = calculate_selection_score(self.get_semantic_feature[:, 0, :], text_feature, 
-                                    score_threshold=0.5, positive_ids=[0])
-
-        alive_mask = ~dead_mask & (scores >= 1.0)
+        alive_mask = ~dead_mask
         dead_indices = dead_mask.nonzero(as_tuple=True)[0]
         alive_indices = alive_mask.nonzero(as_tuple=True)[0]
 

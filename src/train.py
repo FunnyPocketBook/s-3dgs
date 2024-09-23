@@ -150,6 +150,14 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
             if iteration < opt.densify_until_iter and iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
                 dead_mask = (gaussians.get_opacity <= 0.005).squeeze(-1)
+                
+                clip_editor = CLIPEditor()
+                text_feature = clip_editor.encode_text(["car"])
+
+                scores = calculate_selection_score(gaussians.get_semantic_feature[:, 0, :], text_feature, 
+                                            score_threshold=0.5, positive_ids=[0])
+
+                dead_mask = dead_mask & (scores < 1.0)
 
                 gaussians.relocate_gs(dead_mask=dead_mask)
                 gaussians.add_new_gs(cap_max=args.cap_max)
