@@ -559,13 +559,13 @@ class GaussianModel:
             return 0
         
         clip_editor = CLIPEditor()
-        text_feature = clip_editor.encode_text(["car"])
+        text_feature = clip_editor.encode_text(["airplane"])
 
         scores = calculate_selection_score(self.get_semantic_feature[:, 0, :], text_feature, 
                                     score_threshold=0.5, positive_ids=[0])
-        mask = (scores != 0).float()
+        # mask = (scores != 0).float()
         probs = self.get_opacity.squeeze(-1) 
-        probs = probs * mask
+        probs = probs.bool() & (scores >= 1.0)
         add_idx, ratio = self._sample_alives(probs=probs, num=num_gs)
 
         (

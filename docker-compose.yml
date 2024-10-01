@@ -13,6 +13,7 @@ services:
       - /home/dang/checkpoints/sam:/workspace/s-3dgs/encoders/sam_encoder/checkpoints
       - /home/dang/checkpoints/lseg:/workspace/lseg
       - /home/dang/checkpoints/clip:/workspace/clip
+      - /home/dang/.vscode:/workspace/.vscode
       - /home/dang/vscode-server:$HOME/.vscode-server
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ~/.Xauthority:/root/.Xauthority:rw

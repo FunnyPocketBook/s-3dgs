@@ -10,6 +10,8 @@
 #
 
 import os
+
+import cv2
 from utils.clip_utils import CLIPEditor
 import torch
 from random import randint
@@ -98,10 +100,23 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         
         # MCMC only needs image, I only need feature_map and image. Rest is from the original for densification
         feature_map, image, viewspace_point_tensor, visibility_filter, radii = render_pkg["feature_map"], render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["radii"]
-        
+
+
 
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()
+        if iteration < opt.densify_until_iter and iteration > opt.densify_from_iter:
+            # get pixels of image where value is black
+            black_pixels = (image == 0)
+            gt_image[black_pixels] = 0
+            if iteration % 100 == 0:
+                # viewpoint_cam = scene.getTrainCameras()[0]
+                # render_pkg = render(viewpoint_cam, gaussians, pipe, background)
+                # image_to_save = render_pkg["render"]
+                image_np = (torch.clamp(image, min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy()
+                cv2.imwrite(f'{scene.model_path}/images/image_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB))
+                gt_image_np = (torch.clamp(gt_image, min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy()
+                cv2.imwrite(f'{scene.model_path}/images/gt_image_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(gt_image_np, cv2.COLOR_BGR2RGB))
         Ll1 = l1_loss(image, gt_image)
         gt_feature_map = viewpoint_cam.semantic_feature.cuda()
         feature_map = F.interpolate(feature_map.unsqueeze(0), size=(gt_feature_map.shape[1], gt_feature_map.shape[2]), mode='bilinear', align_corners=True).squeeze(0) 
@@ -152,15 +167,17 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 dead_mask = (gaussians.get_opacity <= 0.005).squeeze(-1)
                 
                 clip_editor = CLIPEditor()
-                text_feature = clip_editor.encode_text(["car"])
+                text_feature = clip_editor.encode_text(["airplane"])
 
                 scores = calculate_selection_score(gaussians.get_semantic_feature[:, 0, :], text_feature, 
                                             score_threshold=0.5, positive_ids=[0])
 
-                dead_mask = dead_mask & (scores < 1.0)
+                dead_mask = dead_mask | (scores < 1.0)
 
                 gaussians.relocate_gs(dead_mask=dead_mask)
                 gaussians.add_new_gs(cap_max=args.cap_max)
+            
+         
 
             # Optimizer step
             if iteration < opt.iterations:
@@ -184,6 +201,14 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             if (iteration in checkpoint_iterations):
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
                 torch.save((gaussians.capture(), iteration), scene.model_path + "/chkpnt" + str(iteration) + ".pth")
+        
+        
+            # if iteration % 100 == 0:
+            #     viewpoint_cam = scene.getTrainCameras()[0]
+            #     render_pkg = render(viewpoint_cam, gaussians, pipe, background)
+            #     image_to_save = render_pkg["render"]
+            #     image_np = (torch.clamp(image_to_save, min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy()
+            #     cv2.imwrite(f'{scene.model_path}/images/image_{iteration}.png', cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB))
 
         with torch.no_grad():        
             if network_gui.conn == None:
@@ -285,10 +310,10 @@ if __name__ == "__main__":
     parser.add_argument('--port', type=int, default=6009)
     parser.add_argument('--debug_from', type=int, default=-1)
     parser.add_argument('--detect_anomaly', action='store_true', default=False)
-    parser.add_argument("--test_iterations", nargs="+", type=int, default=[7_000, 30_000])
+    parser.add_argument("--test_iterations", nargs="+", type=int, default=[])
     parser.add_argument("--save_iterations", nargs="+", type=int, default=[7_000, 30_000])
     parser.add_argument("--quiet", action="store_true")
-    parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[])
+    parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[2_000, 5_000, 7_000, 20_000])
     parser.add_argument("--start_checkpoint", type=str, default = None)
     args = parser.parse_args(sys.argv[1:])
     args.save_iterations.append(args.iterations)

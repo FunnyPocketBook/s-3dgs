@@ -1,6 +1,6 @@
 #!/bin/bash
-# cd /workspace/feature-3dgs/encoders/lseg_encoder
-# python -u encode_images.py --backbone clip_vitl16_384 --weights /workspace/lseg/demo_e200.ckpt --widehead --no-scaleinv --outdir /workspace/data/replica_data/office3/rgb_feature_langseg --test-rgb-dir /workspace/data/replica_data/office3/images --workers 0
+# cd /workspace/s-3dgs/encoders/lseg_encoder
+# python -u encode_images.py --backbone clip_vitl16_384 --weights /workspace/lseg/demo_e200.ckpt --widehead --no-scaleinv --outdir /workspace/data/aviodrome/plane/small_input/rgb_feature_langseg --test-rgb-dir /workspace/data/aviodrome/plane/small_input/images --workers 0
 # python -u encode_images.py --backbone clip_vitl16_384 --weights /workspace/lseg/demo_e200.ckpt --widehead --no-scaleinv --outdir /workspace/data/replica_data/office4/rgb_feature_langseg --test-rgb-dir /workspace/data/replica_data/office4/images --workers 0
 # python -u encode_images.py --backbone clip_vitl16_384 --weights /workspace/lseg/demo_e200.ckpt --widehead --no-scaleinv --outdir /workspace/data/replica_data/room1/rgb_feature_langseg --test-rgb-dir /workspace/data/replica_data/room1/images --workers 0
 # cd /workspace/feature-3dgs/encoders/sam_encoder
@@ -11,7 +11,8 @@
 # python export_image_embeddings.py --checkpoint checkpoints/sam_vit_h_4b8939.pth --model-type vit_h --input /workspace/data/cup_plush/images  --output /workspace/data/cup_plush/sam_embeddings
 # python -u encode_images.py --backbone clip_vitl16_384 --weights /workspace/lseg/demo_e200.ckpt --widehead --no-scaleinv --outdir /workspace/data/tree18/colmap/rgb_feature_langseg --test-rgb-dir /workspace/data/tree18/colmap/images --workers 0
 cd /workspace/s-3dgs/
-python train.py -s /workspace/data/tree/colmap -m /workspace/output/tree/lseg/no_speedup/nlr/r-1 -f lseg --cap_max 30000 --scale_reg 0.01 --opacity_reg 0.01 --noise_lr 5e5 --init_type sfm 
+python train.py -s /workspace/data/aviodrome/plane/small_input -m /workspace/output/aviodrome/plane/s-3dgs/masked/run3 -r 8 -f lseg --cap_max 50_000 --scale_reg 0.01 --opacity_reg 0.01 --noise_lr 2000 --init_type sfm --save_iterations 2000 5000 7000 15000 --iterations 15000 --checkpoint_iterations 100 200 300 400 500 600 700 800 900 1000 2000 3000 3500 5000 7000 10000 15000 20000 --start_checkpoint /workspace/output/aviodrome/plane/s-3dgs/masked/run3/chkpnt500.pth
+# python train.py -s /workspace/data/tree/colmap -m /workspace/output/tree/lseg/no_speedup/nlr/r8 -r 8 -f lseg --cap_max 30000 --scale_reg 0.01 --opacity_reg 0.01 --noise_lr 5e5 --init_type sfm --checkpoint_iterations 590
 # python render.py -s /workspace/data/tree18/colmap -m /workspace/output/tree18_sam/ -f sam --iteration 7000 --novel_view --multi_interpolate --video 
 # python render.py -s /workspace/data/tree18/colmap -m /workspace/output/tree18_lseg/ -f lseg --iteration 20000 --novel_view --multi_interpolate --video
 # python train.py -s /workspace/data/tree18/colmap -m /workspace/output/tree18/lseg/ -f lseg -r 4 --speedup --save_iterations 100 200 300 400 500 600 700 800 900 1000 2000 5000 7000 10000 15000 20000 --checkpoint_iterations 100 200 300 400 500 600 700 800 900 1000 2000 5000 7000 10000 15000 20000 --eval --iterations 20000
@@ -22,7 +23,7 @@ python train.py -s /workspace/data/tree/colmap -m /workspace/output/tree/lseg/no
 # python train.py -s /workspace/data/cup_plush -m /workspace/output/cup_plush_sam -f sam -r 4 --speedup --save_iterations 100 200 300 400 500 600 700 800 900 1000 2000 5000 7000 10000 15000 20000 --checkpoint_iterations 100 200 300 400 500 600 700 800 900 1000 2000 5000 7000 10000 15000 20000 --eval --iterations 20000 --test_iterations 5000 7000 15000 20000 --start_checkpoint /workspace/output/cup_plush_sam/chkpnt5000.pth
 # python train.py -s /workspace/data/cup_plush -m /workspace/output/feature_3dgs/cup_plush_sam -f sam -r 0 --speedup --save_iterations 100 200 300 400 500 600 700 800 900 1000 2000 5000 7000 10000 15000 20000 25000 30000 --checkpoint_iterations 100 200 300 400 500 600 700 800 900 1000 2000 5000 7000 10000 15000 20000 25000 30000 --eval
 # python view.py -s /workspace/data/cup_plush -m /workspace/output/cup_plush_sam -f sam --iteration 20000
-# python view.py -s /workspace/data/tree18 -m /workspace/output/tree18_lseg -f lseg --iteration 7000
+# python view.py -s /workspace/data/tree/colmap -m /workspace/output/tree/lseg -f lseg --iteration 7000
 # python view2.py -s /workspace/data/cup_plush -m /workspace/output/cup_plush_mcmc --iteration 30000
 # python render.py -s /workspace/data/cup_plush -m /workspace/output/cup_plush_sam -f sam --iteration 20000 --novel_view --video --multi_interpolate
 # python render.py -s /workspace/data/replica_data/room0 -m /workspace/output/room0/sam -f sam --iteration 20000 --novel_view --video --multi_interpolate
