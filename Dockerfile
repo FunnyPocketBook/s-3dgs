@@ -50,7 +50,7 @@ ENV PATH="/opt/miniforge3/bin:$PATH"
 ENV PATH="/workspace/SIBR_viewers/install/bin:$PATH"
 
 RUN apt update && \
-    apt install -y --no-install-recommends tzdata vim x11-apps xauth libglew-dev libassimp-dev libboost-all-dev \
+    apt install -y --no-install-recommends tzdata vim curl wget x11-apps xauth libglew-dev libassimp-dev libboost-all-dev \
     libgtk-3-dev libopencv-dev libglfw3-dev libavdevice-dev libavcodec-dev libeigen3-dev \
     libxxf86vm-dev libembree-dev software-properties-common && \
     add-apt-repository ppa:kisak/kisak-mesa -y && \
