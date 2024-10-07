@@ -23,7 +23,8 @@ from scene import Scene, GaussianModel
 from utils.general_utils import safe_state
 import uuid
 from tqdm import tqdm
-from utils.image_utils import psnr, render_net_image
+from utils.image_utils import psnr, render_net_image, feature_map as feature_map_to_rgb, to_numpy
+from encoding.utils import get_mask_pallete
 from argparse import ArgumentParser, Namespace
 from arguments import ModelParams, PipelineParams, OptimizationParams
 from scene.gaussian_model import build_scaling_rotation
@@ -101,28 +102,74 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # MCMC only needs image, I only need feature_map and image. Rest is from the original for densification
         feature_map, image, viewspace_point_tensor, visibility_filter, radii = render_pkg["feature_map"], render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["radii"]
 
-
-
         # Loss
-        gt_image = viewpoint_cam.original_image.cuda()
-        if iteration < opt.densify_until_iter and iteration > opt.densify_from_iter:
-            # get pixels of image where value is black
-            black_pixels = (image == 0)
-            gt_image[black_pixels] = 0
-            if iteration % 100 == 0:
-                # viewpoint_cam = scene.getTrainCameras()[0]
-                # render_pkg = render(viewpoint_cam, gaussians, pipe, background)
-                # image_to_save = render_pkg["render"]
-                image_np = (torch.clamp(image, min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy()
-                cv2.imwrite(f'{scene.model_path}/images/image_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB))
-                gt_image_np = (torch.clamp(gt_image, min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy()
-                cv2.imwrite(f'{scene.model_path}/images/gt_image_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(gt_image_np, cv2.COLOR_BGR2RGB))
-        Ll1 = l1_loss(image, gt_image)
         gt_feature_map = viewpoint_cam.semantic_feature.cuda()
         feature_map = F.interpolate(feature_map.unsqueeze(0), size=(gt_feature_map.shape[1], gt_feature_map.shape[2]), mode='bilinear', align_corners=True).squeeze(0) 
         if dataset.speedup:
             feature_map = cnn_decoder(feature_map)
+        mask = torch.isnan(feature_map)
+        # gt_feature_map should be 0 where feature_map is 0
+        gt_feature_map = gt_feature_map.masked_fill(mask, 0) 
+        feature_map = torch.nan_to_num(feature_map, nan=0.0)
         Ll1_feature = l1_loss(feature_map, gt_feature_map) 
+        gt_image = viewpoint_cam.original_image.cuda()
+        if iteration < opt.densify_until_iter and iteration > opt.densify_from_iter: 
+            # Create mask where gt_feature_map is 0 in any channel
+              # Shape: (C_feat, H_feat, W_feat)
+            # print how many 0 are in feature_map and how many elements there are in total
+            # print(f"0s in feature_map: {feature_map.eq(0).sum()}, total elements: {feature_map.numel()}")
+            # # print how many 0 are in gt_feature_map and how many elements there are in total
+            # print(f"0s in gt_feature_map: {gt_feature_map.eq(0).sum()}, total elements: {gt_feature_map.numel()}")
+
+            # Reduce to single channel: True if any channel is 0 at that position
+            mask = mask.any(dim=0)  # Shape: (H_feat, W_feat)
+
+            # Step 1: Convert mask to float
+            mask_float = mask.float()  # Shape: (H_feat, W_feat)
+            # Step 3: Interpolate to match gt_image's spatial dimensions
+            mask_scaled = F.interpolate(
+                mask_float.unsqueeze(0).unsqueeze(0), 
+                size=(gt_image.shape[1], gt_image.shape[2]),  # (H_image, W_image)
+                mode='nearest'  # Preserve binary nature
+            )  # Shape: (1, 1, H_image, W_image)
+            # Expand mask to match RGB channels
+            mask_scaled = mask_scaled.bool().squeeze(0).squeeze(0).repeat(3, 1, 1)  # Shape: (3, H_image, W_image)
+
+            # Apply mask to gt_image using masked_fill
+            gt_image = gt_image.masked_fill(mask_scaled, 0)  # Shape: (3, H_image, W_image)
+            if iteration % 100 == 0:
+                # viewpoint_cam = scene.getTrainCameras()[0]
+                # render_pkg = render(viewpoint_cam, gaussians, pipe, background)
+                # image_to_save = render_pkg["render"]
+                # gt_image_to_save = viewpoint_cam.original_image.cuda()
+                if not os.path.exists(f'{scene.model_path}/images/feature_map'):
+                    os.makedirs(f'{scene.model_path}/images/feature_map')
+                if not os.path.exists(f'{scene.model_path}/images/gt_feature_map'):
+                    os.makedirs(f'{scene.model_path}/images/gt_feature_map')
+                if not os.path.exists(f'{scene.model_path}/images/rgb'):
+                    os.makedirs(f'{scene.model_path}/images/rgb')
+                if not os.path.exists(f'{scene.model_path}/images/gt_rgb_mask'):
+                    os.makedirs(f'{scene.model_path}/images/gt_rgb_mask')
+                if not os.path.exists(f'{scene.model_path}/images/gt_rgb'):
+                    os.makedirs(f'{scene.model_path}/images/gt_rgb')
+                
+                feature_map_rgb = feature_map_to_rgb(feature_map)
+                feature_map_rgb_np = to_numpy(feature_map_rgb)
+                cv2.imwrite(f'{scene.model_path}/images/feature_map/feature_map_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(feature_map_rgb_np, cv2.COLOR_BGR2RGB))
+                
+                gt_feature_map_rgb = feature_map_to_rgb(gt_feature_map)
+                gt_feature_map_rgb_np = to_numpy(gt_feature_map_rgb)
+                cv2.imwrite(f'{scene.model_path}/images/gt_feature_map/gt_feature_map_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(gt_feature_map_rgb_np, cv2.COLOR_BGR2RGB))
+                
+                image_np = to_numpy(image)
+                cv2.imwrite(f'{scene.model_path}/images/rgb/image_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB))
+                
+                gt_image_mask_np = to_numpy(gt_image)
+                cv2.imwrite(f'{scene.model_path}/images/gt_rgb_mask/gt_image_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(gt_image_mask_np, cv2.COLOR_BGR2RGB))
+                
+                gt_image_np = (torch.clamp(viewpoint_cam.original_image.cuda(), min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy()
+                cv2.imwrite(f'{scene.model_path}/images/gt_rgb/gt_image_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(gt_image_np, cv2.COLOR_BGR2RGB))
+        Ll1 = l1_loss(image, gt_image)
         loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image)) + 1.0 * Ll1_feature # Feature 3DGS
         loss = loss + args.opacity_reg * torch.abs(gaussians.get_opacity).mean() # MCMC
         loss = loss + args.scale_reg * torch.abs(gaussians.get_scaling).mean() # MCMC

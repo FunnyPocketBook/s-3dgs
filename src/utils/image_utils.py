@@ -24,6 +24,10 @@ def psnr(img1, img2):
     mse = (((img1 - img2)) ** 2).view(img1.shape[0], -1).mean(1, keepdim=True)
     return 20 * torch.log10(1.0 / torch.sqrt(mse))
 
+
+def to_numpy(tensor):
+    return (torch.clamp(tensor, min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy()
+
 def feature_map(feature):
     global pca_mean
     global top_vector

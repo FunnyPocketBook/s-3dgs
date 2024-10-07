@@ -563,7 +563,6 @@ class GaussianModel:
 
         scores = calculate_selection_score(self.get_semantic_feature[:, 0, :], text_feature, 
                                     score_threshold=0.5, positive_ids=[0])
-        # mask = (scores != 0).float()
         probs = self.get_opacity.squeeze(-1) 
         probs = probs.bool() & (scores >= 1.0)
         add_idx, ratio = self._sample_alives(probs=probs, num=num_gs)
