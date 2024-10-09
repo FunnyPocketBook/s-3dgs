@@ -38,6 +38,8 @@ class CameraInfo(NamedTuple):
     semantic_feature: torch.tensor 
     semantic_feature_path: str 
     semantic_feature_name: str 
+    mask: np.array
+    mask_path: str
 
 
 class SceneInfo(NamedTuple):
@@ -46,7 +48,8 @@ class SceneInfo(NamedTuple):
     test_cameras: list
     nerf_normalization: dict
     ply_path: str
-    semantic_feature_dim: int 
+    semantic_feature_dim: int
+    masks: list
 
 def getNerfppNorm(cam_info):
     def get_center_and_diag(cam_centers):
@@ -71,7 +74,7 @@ def getNerfppNorm(cam_info):
 
     return {"translate": translate, "radius": radius}
 
-def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder, semantic_feature_folder):
+def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder, semantic_feature_folder, masks_folder):
     cam_infos = []
     for idx, key in enumerate(cam_extrinsics):
         sys.stdout.write('\r')
@@ -111,11 +114,16 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder, semantic_fe
         semantic_feature_name = os.path.basename(semantic_feature_path).split(".")[0]
         semantic_feature = torch.load(semantic_feature_path) 
 
+        mask_path = os.path.join(masks_folder, image_name + ".png")
+        mask = Image.open(mask_path)
+
         cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
                               image_path=image_path, image_name=image_name, width=width, height=height,
                               semantic_feature=semantic_feature,
                               semantic_feature_path=semantic_feature_path,
-                              semantic_feature_name=semantic_feature_name) 
+                              semantic_feature_name=semantic_feature_name,
+                              mask=mask,
+                              mask_path=mask_path) 
         cam_infos.append(cam_info)
     sys.stdout.write('\n')
     return cam_infos
@@ -164,7 +172,7 @@ def readColmapSceneInfo(path, foundation_model, images, eval, llffhold=8, init_t
     elif foundation_model =='lseg':
         semantic_feature_dir = "rgb_feature_langseg" 
     cam_infos_unsorted = readColmapCameras(cam_extrinsics=cam_extrinsics, cam_intrinsics=cam_intrinsics, 
-                                           images_folder=os.path.join(path, reading_dir), semantic_feature_folder=os.path.join(path, semantic_feature_dir))
+                                           images_folder=os.path.join(path, reading_dir), semantic_feature_folder=os.path.join(path, semantic_feature_dir), masks_folder=os.path.join(path, "masks"))
     cam_infos = sorted(cam_infos_unsorted.copy(), key = lambda x : x.image_name)
     ###cam_infos = sorted(cam_infos_unsorted.copy(), key = lambda x : int(x.image_name.split('.')[0])) ### if img name is number
     # cam_infos =cam_infos[:30] ###: for scannet only
@@ -180,6 +188,7 @@ def readColmapSceneInfo(path, foundation_model, images, eval, llffhold=8, init_t
         train_cam_infos = cam_infos
         test_cam_infos = []
 
+    masks = [c.mask for c in cam_infos if c.mask is not None]
     nerf_normalization = getNerfppNorm(train_cam_infos)
 
     # ply_path = os.path.join(path, "sparse/0/points3D.ply")
@@ -231,7 +240,8 @@ def readColmapSceneInfo(path, foundation_model, images, eval, llffhold=8, init_t
                            test_cameras=test_cam_infos,
                            nerf_normalization=nerf_normalization,
                            ply_path=ply_path,
-                           semantic_feature_dim=semantic_feature_dim) 
+                           semantic_feature_dim=semantic_feature_dim,
+                           masks=masks) 
     return scene_info
 
 def readCamerasFromTransforms(path, transformsfile, white_background, semantic_feature_folder, extension=".png"): 

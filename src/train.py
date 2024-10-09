@@ -40,6 +40,9 @@ from models.semantic_dataloader import VariableSizeDataset
 from torch.utils.data import DataLoader
 
 def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint, debug_from):
+    if dataset.object == "":
+        print("Please specify the object name using --object.")
+        exit()
     if dataset.cap_max == -1:
         print("Please specify the maximum number of Gaussians using --cap_max.")
         exit()    
@@ -106,8 +109,11 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()
         if iteration < opt.densify_until_iter and iteration > opt.densify_from_iter: 
-            black_pixels = (image == 0)
-            gt_image[black_pixels] = 0
+            # black_pixels = (image == 0)
+            # gt_image[black_pixels] = 0
+            mask = viewpoint_cam.mask.cuda()
+            mask = mask.repeat(3, 1, 1)
+            gt_image[~mask] = 0
             if iteration % 100 == 0:
                 # viewpoint_cam = scene.getTrainCameras()[0]
                 # render_pkg = render(viewpoint_cam, gaussians, pipe, background)
