@@ -60,6 +60,7 @@ class GaussianModel:
         self.spatial_lr_scale = 0
         self.setup_functions()
         self._semantic_feature = torch.empty(0) 
+        self.clip_editor = CLIPEditor()
 
     def capture(self):
         return (
@@ -550,16 +551,14 @@ class GaussianModel:
         self.replace_tensors_to_optimizer(inds=reinit_idx) 
         
 
-    def add_new_gs(self, cap_max):
+    def add_new_gs(self, cap_max, object):
         current_num_points = self._opacity.shape[0]
         target_num = min(cap_max, int(1.05 * current_num_points))
         num_gs = max(0, target_num - current_num_points)
 
         if num_gs <= 0:
             return 0
-        
-        clip_editor = CLIPEditor()
-        text_feature = clip_editor.encode_text(["airplane"])
+        text_feature = self.clip_editor.encode_text(object)
 
         scores = calculate_selection_score(self.get_semantic_feature[:, 0, :], text_feature, 
                                     score_threshold=0.5, positive_ids=[0])

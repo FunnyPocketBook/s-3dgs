@@ -264,20 +264,14 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
             "depth": depth ###d
             } 
 
-def gsplat_render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, scaling_modifier=1.0, override_color=None, override_image_scale=False):
+def gsplat_render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, scaling_modifier=1.0, override_color=None, override_image_scale=1):
     tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
     tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
-    focal_length_x = viewpoint_camera.image_width / (2 * tanfovx)
-    focal_length_y = viewpoint_camera.image_height / (2 * tanfovy)
+    focal_length_x = viewpoint_camera.image_width * override_image_scale / (2 * tanfovx)
+    focal_length_y = viewpoint_camera.image_height * override_image_scale / (2 * tanfovy)
 
-    img_height = int(viewpoint_camera.image_height)
-    img_width = int(viewpoint_camera.image_width)
-
-    if override_image_scale:
-        img_height = img_height * 2
-        img_width = img_width * 2
-        focal_length_x = (viewpoint_camera.image_width * 2) / (2 * tanfovx)
-        focal_length_y = (viewpoint_camera.image_height * 2) / (2 * tanfovy)
+    img_height = int(viewpoint_camera.image_height) * override_image_scale
+    img_width = int(viewpoint_camera.image_width) * override_image_scale
 
     xys, depths, radii, conics, comp, num_tiles_hit, cov3d = project_gaussians(  # type: ignore
         means3d=pc.get_xyz,
