@@ -107,7 +107,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         feature_map, image, viewspace_point_tensor, visibility_filter, radii = render_pkg["feature_map"], render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["radii"]
 
         # Loss
-        gt_image = viewpoint_cam.original_image.cuda()
+        gt_image = viewpoint_cam.original_image.cuda().clone()
         if iteration < opt.densify_until_iter and iteration > opt.densify_from_iter: 
             # black_pixels = (image == 0)
             # gt_image[black_pixels] = 0
@@ -144,7 +144,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 gt_image_mask_np = to_numpy(gt_image)
                 cv2.imwrite(f'{scene.model_path}/images/gt_rgb_mask/gt_image_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(gt_image_mask_np, cv2.COLOR_BGR2RGB))
                 
-                gt_image_np = (torch.clamp(viewpoint_cam.original_image.cuda().clone(), min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy()
+                gt_image_np = (torch.clamp(viewpoint_cam.original_image, min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy()
                 cv2.imwrite(f'{scene.model_path}/images/gt_rgb/gt_image_{iteration}_{gaussians.get_opacity.shape[0]}.png', cv2.cvtColor(gt_image_np, cv2.COLOR_BGR2RGB))
         Ll1 = l1_loss(image, gt_image)
         gt_feature_map = viewpoint_cam.semantic_feature.cuda()
