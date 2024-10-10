@@ -16,9 +16,9 @@ from math import exp
 
 def l1_loss(network_output, gt):
     network_output_clean = torch.nan_to_num(network_output, nan=0.0)
-    # gt_clean should be 0 where network_output_clean is 0
-    # gt_clean = gt.masked_fill(network_output_clean == 0, 0)    
-    return torch.abs(network_output_clean - gt).mean()
+    loss = network_output_clean - gt
+    loss[(gt == 0)] = 0
+    return torch.abs(loss).mean()
 
 def l2_loss(network_output, gt):
     return ((network_output - gt) ** 2).mean()
