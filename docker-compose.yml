@@ -1,21 +1,21 @@
 services:
   s-3dgs:
     container_name: s-3dgs
-    image: ghcr.io/funnypocketbook/s-3dgs:latest
+    image: gitlab-int.nlr.nl:5050/brightsky-interns/s-3dgs:latest
     build:
       context: .
       dockerfile: Dockerfile
     tty: true
     volumes:
-      - /home/ydang/data/3dgs-data/git/s-3dgs/src:/workspace/s-3dgs
-      - /home/ydang/data/3dgs-data/data:/workspace/data
-      - /home/ydang/data/3dgs-data/output:/workspace/output
-      - /home/ydang/data/3dgs-data/checkpoints/sam:/workspace/s-3dgs/encoders/sam_encoder/checkpoints
-      - /home/ydang/data/3dgs-data/checkpoints/lseg:/workspace/lseg
-      - /home/ydang/data/3dgs-data/checkpoints/clip:/workspace/clip
-      - /home/ydang/data/3dgs-data/.vscode:/workspace/.vscode
-      - /home/ydang/data/3dgs-data/vscode-server:$HOME/.vscode-server
-      - /home/ydang/data/3dgs-data/workspace_action.sh:/workspace/workspace_action.sh:rw
+      - /home/dang/git/s-3dgs/src:/workspace/s-3dgs
+      - /home/dang/data:/workspace/data
+      - /home/dang/output:/workspace/output
+      - /home/dang/checkpoints/sam:/workspace/s-3dgs/encoders/sam_encoder/checkpoints
+      - /home/dang/checkpoints/lseg:/workspace/lseg
+      - /home/dang/checkpoints/clip:/workspace/clip
+      - /home/dang/.vscode:/workspace/.vscode
+      - /home/dang/vscode-server:$HOME/.vscode-server
+      - /home/dang/3dgs-data/workspace_action.sh:/workspace/workspace_action.sh:rw
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ~/.Xauthority:/root/.Xauthority:rw
     environment:
