@@ -319,6 +319,9 @@ def training_report(tb_writer, iteration, Ll1, Ll1_feature, loss, l1_loss, elaps
                 for idx, viewpoint in enumerate(config['cameras']):
                     image = torch.clamp(renderFunc(viewpoint, scene.gaussians, *renderArgs)["render"], 0.0, 1.0)
                     gt_image = torch.clamp(viewpoint.original_image.to("cuda"), 0.0, 1.0)
+                    mask = viewpoint.mask.cuda()
+                    mask = mask.repeat(3, 1, 1)
+                    gt_image[~mask] = 0
                     if tb_writer and (idx < 5):
                         tb_writer.add_images(config['name'] + "_view_{}/render".format(viewpoint.image_name), image[None], global_step=iteration)
                         if iteration == testing_iterations[0]:
