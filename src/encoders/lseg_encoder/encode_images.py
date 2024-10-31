@@ -244,12 +244,17 @@ def get_legend_patch(npimg, new_palette, labels):
     out_img.putpalette(new_palette)
     u_index = np.unique(npimg)
     patches = []
-    for i, index in enumerate(u_index):
-        label = labels[index]
-        cur_color = [new_palette[index * 3] / 255.0, new_palette[index * 3 + 1] / 255.0, new_palette[index * 3 + 2] / 255.0]
-        red_patch = mpatches.Patch(color=cur_color, label=label)
-        patches.append(red_patch)
+    label = labels[0]
+    cur_color = [new_palette[1 * 3] / 255.0, new_palette[1 * 3 + 1] / 255.0, new_palette[1 * 3 + 2] / 255.0]
+    red_patch = mpatches.Patch(color=cur_color, label=label)
+    patches.append(red_patch)
     return out_img, patches
+    # for i, index in enumerate(u_index):
+    #     label = labels[index]
+    #     cur_color = [new_palette[index * 3] / 255.0, new_palette[index * 3 + 1] / 255.0, new_palette[index * 3 + 2] / 255.0]
+    #     red_patch = mpatches.Patch(color=cur_color, label=label)
+    #     patches.append(red_patch)
+    # return out_img, patches
 
 def test(args):
 
@@ -440,6 +445,13 @@ def test(args):
             # output_features = [o.cpu().numpy().astype(np.float16) for o in output_features]
 
         for predict, impath, img, fmap in zip(predicts, dst, image, output_features):
+            plain_mask = np.zeros(predict.shape, dtype=np.uint8)
+            plain_mask[predict == 1] = 1
+            plain_mask[predict != 1] = 0
+            # save plain_mask to disk
+            outname = os.path.splitext(impath)[0] + "_plain_mask.png"
+            plain_mask = plain_mask.squeeze() * 255
+            Image.fromarray(plain_mask).save(os.path.join(outdir, outname))
             # prediction mask
             # mask = utils.get_mask_pallete(predict - 1, args.dataset)
             mask = utils.get_mask_pallete(predict - 1, 'detail')
@@ -469,6 +481,9 @@ def test(args):
             plt.savefig(os.path.join(outdir, outname + "_legend.png"), format="png", dpi=300, bbox_inches="tight")
             plt.clf()
             plt.close()
+            
+
+
 
             ###############################
             # print(fmap.shape)  # torch.Size([1, 512, 512, 683])

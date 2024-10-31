@@ -98,17 +98,17 @@ class LSegModule(LSegmentationModule):
         self.std = norm_std
 
     def get_labels(self, dataset):
-        labels = []
-        path = 'label_files/{}_objectInfo150.txt'.format(dataset)
-        assert os.path.exists(path), '*** Error : {} not exist !!!'.format(path)
-        f = open(path, 'r') 
-        lines = f.readlines()      
-        for line in lines: 
-            label = line.strip().split(',')[-1].split(';')[0]
-            labels.append(label)
-        f.close()
-        if dataset in ['ade20k']:
-            labels = labels[1:]
+        labels = ["airplane", "other"]
+        # path = 'label_files/{}_objectInfo150.txt'.format(dataset)
+        # assert os.path.exists(path), '*** Error : {} not exist !!!'.format(path)
+        # f = open(path, 'r') 
+        # lines = f.readlines()      
+        # for line in lines: 
+        #     label = line.strip().split(',')[-1].split(';')[0]
+        #     labels.append(label)
+        # f.close()
+        # if dataset in ['ade20k']:
+        #     labels = labels[1:]
         return labels
 
 
