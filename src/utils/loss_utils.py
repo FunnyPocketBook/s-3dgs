@@ -19,6 +19,7 @@ def l1_loss(network_output, gt):
     loss = network_output_clean - gt
     loss[(gt == 0)] = 0
     return torch.abs(loss).mean()
+    # return torch.abs(network_output - gt).mean()
 
 def l2_loss(network_output, gt):
     return ((network_output - gt) ** 2).mean()

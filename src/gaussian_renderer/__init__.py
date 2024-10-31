@@ -325,6 +325,7 @@ def gsplat_render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Ten
     semantic_features = pc.get_semantic_feature.squeeze(1)
     # set all values that are NaN to 0
     semantic_features = torch.nan_to_num(semantic_features, nan=0.0)
+
     output_semantic_feature_map_list = []
     chunk_size = 32
     bg_color = torch.zeros((chunk_size,), dtype=torch.float, device=bg_color.device)

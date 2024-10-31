@@ -1,29 +1,20 @@
-FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel AS builder
+FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-devel AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PATH="/opt/miniforge3/bin:$PATH"
 ENV TORCH_CUDA_ARCH_LIST="8.0+PTX"
-ENV CUDA_HOME=/opt/miniforge3/envs/s-3dgs/pkgs/cuda-toolkit/
+ENV CUDA_HOME=/usr/local/cuda
 
 RUN apt update && \
-    apt install -y --no-install-recommends tzdata git libglew-dev libassimp-dev libboost-all-dev libgtk-3-dev \
+    apt install -y --no-install-recommends tzdata git g++ libglew-dev libassimp-dev libboost-all-dev libgtk-3-dev \
     libopencv-dev libglfw3-dev libavdevice-dev libavcodec-dev libeigen3-dev libxxf86vm-dev \
     libembree-dev wget && \
-    wget -O Miniforge3.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
-    bash Miniforge3.sh -b -p /opt/miniforge3 && \
-    rm Miniforge3.sh && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
 RUN git clone https://github.com/FunnyPocketBook/s-3dgs.git --recursive && git clone https://github.com/RongLiu-Leo/Gaussian-Splatting-Monitor.git
 
 WORKDIR /workspace/s-3dgs/src
-RUN conda create -y -n s-3dgs python=3.8
-
-SHELL ["conda", "run", "-n", "s-3dgs", "/bin/bash", "-c"]
-
-RUN pip install plyfile tqdm torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
-RUN conda install cudatoolkit-dev=11.7 -c conda-forge
+RUN pip install plyfile tqdm
 RUN pip install submodules/diff-gaussian-rasterization submodules/simple-knn/
 
 RUN pip install -r encoders/lseg_encoder/requirements.txt && \
@@ -43,10 +34,9 @@ WORKDIR /workspace/Gaussian-Splatting-Monitor/SIBR_viewers
 RUN cmake -Bbuild . -DCMAKE_BUILD_TYPE=Release && \
     cmake --build build -j$(nproc) --target install
 
-FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
+FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PATH="/opt/miniforge3/bin:$PATH"
 ENV PATH="/workspace/SIBR_viewers/install/bin:$PATH"
 
 RUN apt update && \
@@ -57,12 +47,9 @@ RUN apt update && \
     apt update && apt -y upgrade && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /opt/miniforge3 /opt/miniforge3
+COPY --from=builder /opt/conda /opt/conda
 COPY --from=builder /workspace/Gaussian-Splatting-Monitor/SIBR_viewers /workspace/SIBR_viewers
 
 WORKDIR /workspace/s-3dgs
-
-RUN conda init bash
-RUN echo "source activate s-3dgs" >> ~/.bashrc
 
 CMD ["tail", "-f", "/dev/null"]

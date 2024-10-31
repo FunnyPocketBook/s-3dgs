@@ -60,6 +60,7 @@ class ModelParams(ParamGroup):
         self.speedup = False ###
         self.render_items = ['RGB', 'Depth', 'Edge', 'Normal', 'Curvature', 'Feature Map']
         self.object = ""
+        self.mask = False
         super().__init__(parser, "Loading Parameters", sentinel)
 
     def extract(self, args):

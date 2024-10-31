@@ -15,6 +15,8 @@ import torch.nn.functional as F
 import torch.nn as nn
 import sklearn.decomposition
 import numpy as np
+import cv2
+
 pca_mean = None
 top_vector = None
 def mse(img1, img2):
@@ -32,7 +34,12 @@ def feature_map(feature):
     global pca_mean
     global top_vector
     fmap = feature[None, :, :, :]  # torch.Size([1, 512, h, w])
-    fmap = nn.functional.normalize(fmap, dim=1)
+    fmap = nn.functional.normalize(fmap, dim=1, eps=1e-6) # original one but can't handle zero
+    
+    # fmap_max = fmap.max(dim=1, keepdim=True)[0]
+    # fmap_min = fmap.min(dim=1, keepdim=True)[0]
+    # fmap_range = fmap_max - fmap_min
+    # fmap = (fmap - fmap_min) / fmap_range
 
     # Reshape and normalize
     f_samples = fmap.permute(0, 2, 3, 1).reshape(-1, fmap.shape[1])[::3]
@@ -43,6 +50,8 @@ def feature_map(feature):
     mean = pca_mean
     f_samples_centered = f_samples - mean
     covariance_matrix = f_samples_centered.T @ f_samples_centered / (f_samples_centered.shape[0] - 1)
+    # set nan's in covariance_matrix to 0
+    covariance_matrix[torch.isnan(covariance_matrix)] = 0
 
     eig_values, eig_vectors = torch.linalg.eigh(covariance_matrix)
     if top_vector is None:
@@ -60,6 +69,88 @@ def feature_map(feature):
     vis_feature = vis_feature.clamp(0.0, 1.0).float().reshape((fmap.shape[2], fmap.shape[3], 3))
 
     return vis_feature.permute(2, 0, 1)  # torch.Size([3, h, w])
+
+
+def select_text_vector_features(feature_map, text_vector, percentile=70):
+    """
+    Selects feature vectors corresponding to 'airplane' based on cosine similarity.
+    
+    Args:
+        feature_map (torch.Tensor): The feature map tensor of shape [1, C, H, W].
+        text_vector (torch.Tensor): The text feature vector for 'airplane' of shape [C].
+        percentile (float): The percentile to determine the dynamic threshold.
+        
+    Returns:
+        torch.Tensor: A mask tensor of shape [1, 1, H, W] indicating selected features.
+    """
+    # Ensure text_vector is 1D
+    if text_vector.dim() > 1:
+        text_vector = text_vector.view(-1)
+    
+    # Normalize feature map and text vector
+    fmap = F.normalize(feature_map, dim=1, eps=1e-6)  # [1, C, H, W]
+    text_vector = F.normalize(text_vector, dim=0, eps=1e-6)  # [C]
+
+    C, H, W = fmap.shape[1], fmap.shape[2], fmap.shape[3]
+    fmap_flat = fmap.view(C, -1)  # [C, N]
+
+    # Compute cosine similarity
+    text_vector = text_vector.unsqueeze(1)  # [C, 1]
+    similarities = F.cosine_similarity(fmap_flat, text_vector, dim=0)  # [N]
+
+    # Representative vector based on max similarity
+    max_sim_idx = torch.argmax(similarities)
+    representative_vector = fmap_flat[:, max_sim_idx].unsqueeze(1)  # [C, 1]
+
+    # Compute similarity with representative vector
+    rep_similarities = F.cosine_similarity(fmap_flat, representative_vector, dim=0)  # [N]
+
+    # Threshold based on percentile
+    threshold = torch.quantile(rep_similarities, percentile / 100.0)
+
+    # Create mask
+    selected_mask = rep_similarities >= threshold  # [N]
+    selected_mask = selected_mask.view(1, 1, H, W)
+
+    return selected_mask.float()
+
+def visualize_selected_features(feature, text_vector):
+    """
+    Visualizes the selected 'airplane' features in the image.
+    
+    Args:
+        feature (torch.Tensor): The feature map tensor of shape [C, H, W].
+        text_vector (torch.Tensor): The text feature vector for 'airplane' of shape [C].
+        
+    Returns:
+        torch.Tensor: The visualization tensor of shape [3, H, W].
+    """
+    # Generate the full feature map visualization
+    vis_full = feature_map(feature)  # [3, H, W]
+    
+    # Select airplane features
+    feature = feature.unsqueeze(0)  # [1, C, H, W]
+    mask = select_text_vector_features(feature, text_vector)  # [1, 1, H, W]
+    
+    # Apply the mask to the visualization
+    vis_selected = vis_full * mask.squeeze(0).squeeze(0)  # [3, H, W]
+    
+    return vis_selected
+
+def binarize_mask(mask, threshold=0.5):
+    return (mask > threshold).float()
+
+def morph_trans_mask(mask):
+    kernel = np.ones((7, 7), np.uint8)
+    mask = mask.cpu().numpy().astype(np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    # dilation
+    mask = cv2.dilate(mask, kernel, iterations=2)
+    mask = torch.tensor(mask).cuda().float()
+    return mask
+
+
 
 def gradient_map(image):
     sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).cuda()/4
